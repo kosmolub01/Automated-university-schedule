@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>POLSL Schedule Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+
+    p {
+      color: #666;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form {
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      width: 200px;
+    }
+
+    input[type="submit"] {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>POLSL Schedule Viewer</h1>
+  <p>Enter your group name, e.g. INFKat II/1. Then the up-to-date schedule will show up.</p>
+  <form action="view_schedule">
+    <label for="group_name">Group:</label>
+    <input type="text" id="group_name" name="group_name">
+    <br><br>
+    <input type="submit" value="View">
+  </form>
+</body>
+</html>
