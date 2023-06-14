@@ -48,11 +48,39 @@
       background-color: #45a049;
     }
   </style>
+   <script type="text/javascript">
+    $(document).ready(function() {
+        $(function() {
+            $( "#file_does_not_exist" ).dialog({
+                modal: true,
+                closeOnEscape: false,
+                dialogClass: "no-close",
+                resizable: false,
+                draggable: false,
+                width: 600,
+                buttons: [
+                    {
+                        text: "OK",
+                        click: function() {
+                        $( this ).dialog( "close" );
+                        }
+                    }
+                ]
+            });
+        });
+    });
+</script>
 </head>
 <body>
+  {% if file_does_not_exist %}
+    <div id="file_does_not_exist" title="file_does_not_exist Flag">
+        <p>Group not found.</p>
+    </div>
+  {% endif %}
   <h1>POLSL Schedule Viewer</h1>
   <p>Enter your group name, e.g. INFKat II/1. Then the up-to-date schedule will show up.</p>
-  <form action="view_schedule">
+  <form action="/app/view_schedule/" method="post">
+    {% csrf_token %}
     <label for="group_name">Group:</label>
     <input type="text" id="group_name" name="group_name">
     <br><br>
