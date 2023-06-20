@@ -18,27 +18,6 @@ def index(request):
     # Direct to schedule page.
     return redirect("app:view_schedule")
 
-"""Handle entering group name on starting page. Save group name in the cookie."""
-"""def enter_group(request):
-    
-    group_name = request.POST['group_name']
-
-    print("req:", group_name)
-
-    # Set the cookie value. Pass it to somehow to view_schedule when you will destingush how you get to view_schedule
-    response = HttpResponse('anything')
-    response.set_cookie('group_name', group_name)
-
-    view_schedule(request, group_name)
-
-    return HttpResponse("OK")"""
-
-"""def set_cookie(request):
-    # Set the cookie value. Pass it to somehow to view_schedule when you will destingush how you get to view_schedule
-    response = HttpResponse('anything')
-    response.set_cookie('group_name', request.POST['group_name'])
-    return response"""
-
 """Show up-to-date schedule page."""
 def view_schedule(request):
     # Retrive student's group from cookies. 
@@ -59,49 +38,40 @@ def view_schedule(request):
 
         print('file_path', file_path)
 
+        # Check whether file with a schedule of given group exists. It may not 
+        # exist because user provided wrong group name or because for some 
+        # reason server does not have that file.
         if not os.path.exists(file_path):
             print("file_does_not_exist")
             context = {'file_does_not_exist': True}
-            #messages.add_message(request, messages.WARNING, 'Group not found.')
+
             response.content = render(request, 'app/index.html', context)
  
             return response
 
         response.set_cookie('group_name', group_name)
 
-
+    # Cookie is set.
     print("in view_schedule. group_name: ", group_name)
 
-    # Create name of a file that contains screenshot of group's schedule.
+    # Create path to a file that contains screenshot of group's schedule.
+    # It will be used in HTML.
     schedule_screenshot = 'app/' + group_name + ".png"
 
-    #schedule_screenshot = "C:\Repos\Automated-university-schedule\Automated_university_schedule\\app\schedules\\test.png"
+    group_name = group_name.replace('/', '$')
+    file_path = os.getcwd() + '\\app\static\\app\\' + group_name + '.png'
+
+    # Make sure file exists. If file does not exist, delete the cookie
+    # and redirect to the main page (exacly the same action like for changing the group).
+    if not os.path.exists(file_path):
+        # Direct to change_group view.
+        return redirect("app:change_group")
 
     context = {'schedule_screenshot': schedule_screenshot}
 
     response.content = render(request, 'app/schedule.html', context)
  
     return response
-
-"""Return image of up-to-date schedule for a group, that is retrived from cookies.
-def image(request):
-    # Retrive student's group from cookies. 
-    group_name = request.COOKIES.get('group_name')
- 
-    # Create path to a file that contains screenshot of group's schedule.
-    schedule_screenshot_path = "\schedules\\" + group_name + ".png"
-    
-    # Open the image file in binary mode
-    with open(schedule_screenshot_path, 'rb') as f:
-        image_data = f.read()
-    
-    # Set the appropriate MIME type for the image
-    response = HttpResponse(content_type='image/jpeg')
-    
-    # Set the content of the response to the image data
-    response.write(image_data)
-    
-    return response"""
 
 """Handle changing the group. User presses 'Change group' button on schedule page, 
 then cookie is deleted and user is redirected to starting page."""
@@ -117,26 +87,3 @@ def change_group(request):
     response.content = render(request, 'app/index.html', context)
  
     return response
-
-"""
-def last_message_id(request, chat_id):
-    try:
-        chat = Chat.objects.get(pk=chat_id)
-    except Chat.DoesNotExist:
-        raise Http404("Chat does not exist")
-            
-    return HttpResponse(chat.message_set.count())
-
-def messages(request, chat_id):
-    try:
-        chat = Chat.objects.get(pk=chat_id)
-    except Chat.DoesNotExist:
-        raise Http404("Chat does not exist")
-    
-    messages = chat.message_set.all()
-    messages_html = "<br>"
-
-    for message in reversed(messages):
-        messages_html += message.__str__() + "<br>"
-
-    return HttpResponse(messages_html)"""
