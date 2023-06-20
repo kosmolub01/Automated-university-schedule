@@ -13,7 +13,7 @@ Input parameters:
     - location with up-to-date browser driver
 
 Output:
-    - info. string about program progress
+    - info. about start and finish time, program progress
     - 0 - successful completion
     - error info. string - error
 
@@ -27,13 +27,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from bs4 import BeautifulSoup
-from datetime import date
+from datetime import datetime, date
 import sys
 
 # Debug purposes
 from selenium.webdriver.chrome.options import Options
 
 if __name__ == "__main__":
+
+    start = datetime.now()
+
+    print('\nStart time:', start)
 
     # Setup webdriver
     try:       
@@ -147,4 +151,12 @@ if __name__ == "__main__":
         driver.quit()
     except:
         print("Something went wrong when setting up the webdriver.")
+
+finish = datetime.now()
+
+print('Finish time:', finish)
+
+duration = finish - start
+
+print('Duration:', duration)
                     
