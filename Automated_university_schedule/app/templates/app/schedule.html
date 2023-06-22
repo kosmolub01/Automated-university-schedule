@@ -11,9 +11,8 @@
         }
         
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            height: 100%;
+            width: 100%;
             text-align: center;
         }
         
@@ -23,14 +22,14 @@
         }
         
         .schedule-image {
-            margin-top: 80px;
-            max-width: 100%;
-            height: auto;
+            margin-top: 30px;
+            width: 95%;
+            height: 95%;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
         }
         
         .change-group-button {
-            margin-top: 40px;
+            margin-top: 20px;
             background-color: #4CAF50;
             color: #ffffff;
             border: none;
@@ -49,12 +48,11 @@
 
 <div class="container">
     <h1>POLSL Schedule Viewer</h1>
-    {% load static %}
-    <img src="{% static schedule_screenshot %}" alt="Schedule" class="schedule-image">
-
     <form action="/app/change_group/">
         <input type="submit" value="Change Group" class="change-group-button">
     </form>
+    {% load static %}
+    <img src="{% static schedule_screenshot %}" alt="Schedule" class="schedule-image">
 </div>
 
 </body>
