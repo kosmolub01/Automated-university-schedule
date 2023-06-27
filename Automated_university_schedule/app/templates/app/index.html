@@ -29,62 +29,92 @@
     }
 
     input[type="text"] {
+      display:block;
+      margin:0 auto;
       padding: 5px;
       border: 1px solid #ccc;
       border-radius: 3px;
       width: 200px;
+      margin-top: 5px;
     }
 
     input[type="submit"] {
-      padding: 8px 16px;
       background-color: #4CAF50;
-      color: #fff;
+      color: #ffffff;
       border: none;
-      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 16px;
       cursor: pointer;
+      border-radius: 4px;
+      margin-top: 10px;
     }
 
     input[type="submit"]:hover {
       background-color: #45a049;
     }
+    /* Styles for the tabs */
+    .tab {
+      overflow: hidden;
+      background-color: #4CAF50;
+    }
+
+    body {
+    padding: 0;
+  }
+
+  /* Style the buttons that are used to open the tab content */
+  .tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  /* Change background color of buttons on hover */
+  .tab button:hover {
+    background-color: #45a049;
+  }
+
   </style>
-   <script type="text/javascript">
-    $(document).ready(function() {
-        $(function() {
-            $( "#file_does_not_exist" ).dialog({
-                modal: true,
-                closeOnEscape: false,
-                dialogClass: "no-close",
-                resizable: false,
-                draggable: false,
-                width: 600,
-                buttons: [
-                    {
-                        text: "OK",
-                        click: function() {
-                        $( this ).dialog( "close" );
-                        }
-                    }
-                ]
-            });
-        });
-    });
-</script>
+  <script type="text/javascript">
+    function about(event, tabName) {
+      $( "#dialog" ).dialog({position: { my: "center", at: "top+300", of: window }});
+    }
+  </script>  
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </head>
 <body>
+  <div class="tab">
+    <button onclick="about()">About</button>
+  </div>
+
   {% if file_does_not_exist %}
     <div id="file_does_not_exist" title="file_does_not_exist Flag">
         <p>Group not found.</p>
     </div>
   {% endif %}
+  
   <h1>POLSL Schedule Viewer</h1>
   <p>Enter your group name, e.g. INFKat II/1. Then the up-to-date schedule will show up.</p>
   <form action="/app/view_schedule/" method="post">
     {% csrf_token %}
     <label for="group_name">Group:</label>
     <input type="text" id="group_name" name="group_name">
-    <br><br>
     <input type="submit" value="View">
   </form>
+  <span hidden><div id="dialog" title="About"> 
+    <p>This app makes checking schedule at POLSL easier. It repleces several clicks with just one. 
+      In order to view up-to-date schedule, you don't have manually select group and current date all the time. 
+      During first usage, enter the group name and later that information will be stored in cookies. 
+      To see schedule, only opening the webpage is required.</p>
+  </div></span>
 </body>
 </html>
