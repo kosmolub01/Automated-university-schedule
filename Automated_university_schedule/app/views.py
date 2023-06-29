@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
 import os
 
 """Starting page - if client has a cookie, use it and direct to the schedule page.
@@ -12,7 +13,8 @@ def index(request):
 
     if group_name is None:
         # Cookie is not set - serve the starting page.
-        context = {'file_does_not_exist': False}
+        context = {'file_does_not_exist': False,
+                   'about_tab_visibility': False}
         return render(request, 'app/index.html', context)
 
     # Direct to schedule page.
@@ -86,4 +88,31 @@ def change_group(request):
 
     response.content = render(request, 'app/index.html', context)
  
+    return response
+
+def login_page(request):
+    response = HttpResponse()
+    response.content = render(request, 'app/login.html')
+    return response
+
+def login_user(request):
+    response = HttpResponse()
+
+    user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+    if user is not None:
+        # A backend authenticated the credentials
+        login(request, user)
+        response.content = render(request, 'app/admin.html')
+        return response
+    else:
+        # No backend authenticated the credentials
+        
+
+    
+        response.content = "it didn't worked"
+        return response
+
+def logout_user(request):
+    response = HttpResponse(status=200)
+    logout(request)
     return response
