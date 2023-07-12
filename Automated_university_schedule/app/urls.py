@@ -11,4 +11,6 @@ urlpatterns = [
     path('update_schedules/', views.login_page, name='login_page'),
     path('login_user/', views.login_user, name='login_user'),
     path('logout_user/', views.logout_user, name='logout_user'),
+    path('update_the_schedules/', views.update_the_schedules, name='update_the_schedules'),
+    path('check_scraper_progress/', views.check_scraper_progress, name='check_scraper_progress'),
 ]

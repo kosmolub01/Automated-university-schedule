@@ -1,7 +1,18 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from .models import Run
+from multiprocessing import Process
 import os
+import sqlite3
+from time import sleep
+from .schedule_scraper import *
+from django.http import JsonResponse
+
+# Schedule scraper input parameters.
+screenshots_folder_path = "C:/Repos/Automated-university-schedule/Automated_university_schedule/app/static/app" 
+webdriver_path = "C:/Users/s.dwornicki/Downloads/edgedriver_win64/msedgedriver.exe"
+db_filename = "update_runs_history.db"
 
 """Starting page - if client has a cookie, use it and direct to the schedule page.
 If there is no cookie, let the client enter the group name and direct to schedule page."""
@@ -96,23 +107,71 @@ def login_page(request):
     return response
 
 def login_user(request):
-    response = HttpResponse()
-
     user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
     if user is not None:
-        # A backend authenticated the credentials
+        # A backend authenticated the credentials.
         login(request, user)
+        response = HttpResponse()
         response.content = render(request, 'app/admin.html')
         return response
     else:
-        # No backend authenticated the credentials
-        
-
-    
-        response.content = "it didn't worked"
+        # No backend authenticated the credentials.
+        response = HttpResponse(status=403)
         return response
 
 def logout_user(request):
     response = HttpResponse(status=200)
     logout(request)
     return response
+
+def update_the_schedules(request):
+    response = HttpResponse(status=200)
+    
+    # Start process.
+    schedule_scraper = ScheduleScraper(screenshots_folder_path, webdriver_path, db_filename)
+
+    process = Process(target=schedule_scraper.scrap_the_schedules)
+    process.start()
+
+    # For the next 30 sec, every 5 sec check the number of updated screenshots.
+
+    # Connect to the database.
+    conn = sqlite3.connect(db_filename)
+
+    # Create a cursor.
+    cursor = conn.cursor()
+
+    """sleep(1)
+
+    for i in range(1, 6):
+        # Execute the SELECT statement.
+        cursor.execute("SELECT * FROM run ORDER BY id DESC LIMIT 1")
+
+        # Fetch last row.
+        row = cursor.fetchone()
+
+        print(row)
+            
+        sleep(5)"""
+
+    return response
+
+def check_scraper_progress(request):
+
+    print("checking progress")
+    # Connect to the database.
+    conn = sqlite3.connect(db_filename)
+
+    # Create a cursor.
+    cursor = conn.cursor()
+
+    # Execute the SELECT statement.
+    cursor.execute("SELECT updated_screenshots, last_status FROM run ORDER BY id DESC LIMIT 1")
+
+    # Fetch  row.
+    row = cursor.fetchone()
+    updated_screenshots = row[0]
+    last_status = row[1]
+
+    response_data = {'updated_screenshots' : updated_screenshots, 'last_status' : last_status}
+    return JsonResponse(response_data, status=200)             

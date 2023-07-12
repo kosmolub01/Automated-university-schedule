@@ -82,9 +82,9 @@
 
   </style>
   <script type="text/javascript">
-    function about(event, tabName) {
-      $( "#dialog" ).dialog({position: { my: "center", at: "top+300", of: window }});
-    }
+  function about(event, tabName) {
+  $("#dialog").dialog({ position: { my: "center", at: "top+300", of: window }});
+  }
   </script>  
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/resources/demos/style.css">
@@ -110,11 +110,16 @@
     <input type="text" id="group_name" name="group_name">
     <input type="submit" value="View">
   </form>
-  <span hidden><div id="dialog" title="About"> 
-    <p>This app makes checking schedule at POLSL easier. It repleces several clicks with just one. 
-      In order to view up-to-date schedule, you don't have manually select group and current date all the time. 
-      During first usage, enter the group name and later that information will be stored in cookies. 
-      To see schedule, only opening the webpage is required.</p>
-  </div></span>
+
+  <span>
+    <div id="dialog" title="About" style="display: none; text-align: justify; text-justify: inter-word;">
+      <p style="text-align: justify; text-justify: inter-word;">This app makes checking schedule at POLSL easier. It replaces several clicks with just one. 
+        In order to view up-to-date schedule, you don't have to manually select the group and current date all the time. 
+        During the first usage, enter the group name and later that information will be stored in cookies. 
+        To see the schedule, only opening the webpage is required.</p>
+    </div>
+  </span>
+  
+
 </body>
 </html>

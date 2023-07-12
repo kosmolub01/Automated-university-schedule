@@ -4,18 +4,10 @@
 Filename: schedule_screenshots.py
 
 Description:
-For all groups that are avaiable on https://plan.polsl.pl/, script finds 
-up-to-date schedule, takes screenshot and saves as a .png file in a given 
-folder. File name is the name of group (‘/’ replaced with ‘$’).
-
-Input parameters:
-    - folder path to save screenshots
-    - location with up-to-date browser driver
-
-Output:
-    - info. about start and finish time, program progress
-    - 0 - successful completion
-    - error info. string - error
+For all groups that are avaiable on https://plan.polsl.pl/, ScheduleScraper 
+object can find up-to-date schedule, takes screenshot and saves as a .png file 
+in a given folder. Filename of a screenshot is the name of group 
+(‘/’ replaced with ‘$’). Logs are saved in DB.
 
 ===============================================================================
 
@@ -28,105 +20,111 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from bs4 import BeautifulSoup
 from datetime import datetime, date
-import sys
-
-# Debug purposes
 from selenium.webdriver.chrome.options import Options
+import sys
+import sqlite3
 
-if __name__ == "__main__":
+# Name of DB file.
+db_file = "update_runs_history.db"
 
-    start = datetime.now()
+class DbSetUpException(Exception):
+   def __init__(self):
+      pass
 
-    print('\nStart time:', start)
+   def __str__(self):
+      message = "Schedule Scraper could not set up the DB."
+      return message
+   
+class DbUpdateException(Exception):
+   def __init__(self):
+      pass
 
-    # Setup webdriver
-    try:       
-        s = Service(sys.argv[2])
-        op = webdriver.EdgeOptions()
+   def __str__(self):
+      message = "Schedule Scraper could not update the DB."
+      return message
 
-        op.add_argument('headless')
+class ScheduleScraper:
+    """
+    ScheduleScraper class.
 
-        driver = webdriver.Edge(service=s, options=op)
-        driver.set_window_size(2160, 1280)
-        driver.maximize_window()
+    TBD:
+    Attributes
+    ----------
+    name : str
+        first name of the person
 
-        # Get the webpage
-        try:
-            driver.get("https://plan.polsl.pl/")
+    Methods
+    -------
+    info(additional=""):
+        Prints the person's name and age.
+    """
+    def __init__(self, screenshots_folder_path, webdriver_path):
+        self.screenshots_folder_path = screenshots_folder_path
+        self.webdriver_path = webdriver_path
+        self._set_up_the_db()
+    
+    # In case there is no DB or table, it creates them.
+    def _set_up_the_db(self):
+        
+        # Connect to the database.
+        conn = sqlite3.connect(db_file)
 
-            # Retrieve linked texts of all groups. Linked texts are going to be used to get to every group schedule.
-            # Do the screenshot of the schedule. Save screenshot with a name of the group ('/' replaced with '$').
+        # Create a cursor.
+        cursor = conn.cursor()
+
+        # Create run table.
+        sql_create_table = """ CREATE TABLE IF NOT EXISTS run (
+                                        id integer PRIMARY KEY AUTOINCREMENT,
+                                        updated_screenshots integer,
+                                        last_status text,
+                                        start_time DATE,
+                                        finish_time DATE
+                                    ); """
+
+        cursor.execute(sql_create_table)
+
+        """sql_drop_table = " DROP TABLE run; "
+
+        cursor.execute(sql_drop_table)"""
+
+        # Close the cursor and the database connection.
+        cursor.close()
+        conn.close()
+
+    def scrap_the_schedules(self):
+        
+        start = datetime.now()
+
+        # Connect to the database.
+        conn = sqlite3.connect(db_file)
+
+        # Create a cursor.
+        cursor = conn.cursor()
+
+        sql_insert = """INSERT INTO run (start_time, last_status) VALUES (?, ?)"""
+        cursor.execute(sql_insert, [start, 'Running'])
+
+        # Setup webdriver
+        try:       
+            print("Setup webdriver")
+            s = Service(webdriver_path)
+            op = webdriver.EdgeOptions()
+
+            op.add_argument('headless')
+
+            driver = webdriver.Edge(service=s, options=op)
+            driver.set_window_size(2160, 1280)
+            driver.maximize_window()
+
+            # Get the webpage
             try:
-                driver.switch_to.frame("page_content")
+                print("Get the webpage")
+                driver.get("https://plan.polsl.pl/")
 
-                # Uncheck "Teacher". 
-                element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                    By.XPATH, "/html/body/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table[2]/tbody/tr[2]/td[2]/input[2]")))
-                element.click()
-
-                # Click "Search". 
-                element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                    By.XPATH, "/html/body/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table[2]/tbody/tr[3]/td/center/input")))
-                element.click()
-
-                # Get HTML content of the page.
-                html = driver.page_source
-
-                soup = BeautifulSoup(html, features="html.parser")
-
-                # Extract demanded part of the HTML content (link texts).
-                link_texts = soup.find("div", {"id": "result_plan"}).find_all("a")
-
-                # Needed for progress info.
-                group_no = 0
-                groups_quantity = len(link_texts)
-
-                for link_text in link_texts:
-
-                    # Print progress info.
-                    print("Group no.", group_no, "of", groups_quantity)
-
-                    # Click the result link. 
-                    element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                        By.LINK_TEXT, link_text.string)))
-                    element.click()
-
-                    element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                        By.ID, "wBWeek")))
-                    element = Select(element)
-
-                    # Select current week.
-                    current_day = date.today().day
-                    current_month = date.today().month
-
-                    weeks = element.options[1:]
-
-                    for week in weeks:
-
-                        if(int(week.text[3:5]) == current_month and int(week.text[0:2]) <= current_day and 
-                        int(week.text[6:8]) >= current_day):
-                            week.click()
-                            break
-
-                    element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
-                        By.ID, "wBButton")))
-                    element.click()
-
-                    # Do the screenshot.
-
-                    # Retrive group name.
-                    group = link_text.string
-
-                    # Create filepath (folder path provided as a argument + '\' + 
-                    # + group name retrived from the webpage ('/' replaced with '$') + '.png').
-                    filepath = sys.argv[1] + '\\' + group.replace('/', '$') + '.png'
-
-                    # Do the screenshot.
-                    driver.save_screenshot(filepath)
-
-                    # Get back to page with all groups.
-                    driver.get("https://plan.polsl.pl/")
-
+                # Retrieve linked texts of all groups. Linked texts are going to be used to get to every group schedule.
+                # Do the screenshot of the schedule. Save screenshot with a name of the group ('/' replaced with '$').
+                try:
+                    print("Retrieve linked texts of all groups")
                     driver.switch_to.frame("page_content")
 
                     # Uncheck "Teacher". 
@@ -139,24 +137,119 @@ if __name__ == "__main__":
                         By.XPATH, "/html/body/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table[2]/tbody/tr[3]/td/center/input")))
                     element.click()
 
-                    group_no = group_no + 1
+                    # Get HTML content of the page.
+                    html = driver.page_source
 
-                print(0)                     
+                    soup = BeautifulSoup(html, features="html.parser")
+
+                    # Extract demanded part of the HTML content (link texts).
+                    link_texts = soup.find("div", {"id": "result_plan"}).find_all("a")
+
+                    # Needed for progress info.
+                    group_no = 0
+                    groups_quantity = len(link_texts)
+
+                    for link_text in link_texts:
+
+                        # Click the result link. 
+                        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                            By.LINK_TEXT, link_text.string)))
+                        element.click()
+
+                        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                            By.ID, "wBWeek")))
+                        element = Select(element)
+
+                        # Select current week.
+                        current_day = date.today().day
+                        current_month = date.today().month
+
+                        weeks = element.options[1:]
+
+                        for week in weeks:
+
+                            if(int(week.text[3:5]) == current_month and int(week.text[0:2]) <= current_day and 
+                            int(week.text[6:8]) >= current_day):
+                                week.click()
+                                break
+
+                        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                            By.ID, "wBButton")))
+                        element.click()
+
+                        # Do the screenshot.
+
+                        # Retrive group name.
+                        group = link_text.string
+
+                        # Create filepath (folder path provided as a argument + '\' + 
+                        # + group name retrived from the webpage ('/' replaced with '$') + '.png').
+                        filepath = screenshots_folder_path + '\\' + group.replace('/', '$') + '.png'
+
+                        # Do the screenshot.
+                        driver.save_screenshot(filepath)
+
+                        # Get back to page with all groups.
+                        driver.get("https://plan.polsl.pl/")
+
+                        driver.switch_to.frame("page_content")
+
+                        # Uncheck "Teacher". 
+                        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                            By.XPATH, "/html/body/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table[2]/tbody/tr[2]/td[2]/input[2]")))
+                        element.click()
+
+                        # Click "Search". 
+                        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                            By.XPATH, "/html/body/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table[2]/tbody/tr[3]/td/center/input")))
+                        element.click()
+
+                        sql_update_table = """UPDATE run SET updated_screenshots=? WHERE start_time=?"""
+                        # Execute the update statement.
+                        cursor.execute(sql_update_table, [group_no + 1, start])
+                        print("DB write")
+
+                        group_no = group_no + 1                    
+                except:
+                    print("Except - retrieve linked texts of all groups")
+                    sql_update_table = """UPDATE run SET last_status=? WHERE start_time=?"""
+                    # Execute the update statement.
+                    cursor.execute(sql_update_table, ['Error - something went wrong when getting the screenshots', start])
             except:
-                print("Something went wrong when getting the screenshots.")  
+                print("Except - Get the webpage")
+                sql_update_table = """UPDATE run SET last_status=? WHERE start_time=?"""
+                # Execute the update statement.
+                cursor.execute(sql_update_table, ['Error - something went wrong when getting the schedule webpage', start])
+
+            # Quit the driver instance.
+            driver.quit()
         except:
-            print("Something went wrong when getting the schedule webpage.")
+            print("Except - Setup webdriver")
+            sql_update_table = """UPDATE run SET last_status=? WHERE start_time=?"""
+            # Execute the update statement.
+            cursor.execute(sql_update_table, ['Error - something went wrong when setting up the webdriver', start])
 
-        # Quit the driver instance.
-        driver.quit()
-    except:
-        print("Something went wrong when setting up the webdriver.")
+        finally:
+            print("Finally")
+            finish = datetime.now()
 
-finish = datetime.now()
+            sql_update_table = """UPDATE run SET finish_time=? WHERE start_time=?"""
+            # Execute the update statement.
+            cursor.execute(sql_update_table, [finish, start])
 
-print('Finish time:', finish)
+            conn.commit()
 
-duration = finish - start
+            # Close the cursor and the database connection.
+            cursor.close()
+            conn.close()
 
-print('Duration:', duration)
-                    
+if __name__ == "__main__":
+    try:
+        screenshots_folder_path = sys.argv[1]
+        webdriver_path = sys.argv[2]
+
+        scraper = ScheduleScraper(screenshots_folder_path, webdriver_path)
+        scraper.scrap_the_schedules()
+
+    except(IndexError):
+        print("\nPlease, provide all parameters.\n\nschedule_screenshots.py <screenshots_folder_path> <webdriver_path>")
