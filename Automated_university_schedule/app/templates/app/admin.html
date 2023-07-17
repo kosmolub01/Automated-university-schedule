@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>POLSL Schedule Viewer</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f2f2f2;
+        font-family: Arial, sans-serif;
+      }
+
+      .container {
+        height: 100%;
+        width: 100%;
+        text-align: center;
+      }
+
+      h1 {
+        color: #333333;
+        margin-top: 40px;
+      }
+
+      /* Styles for the tabs */
+      .tab {
+        overflow: hidden;
+        background-color: #4caf50;
+      }
+
+      body {
+        padding: 0;
+      }
+
+      /* Style the buttons that are used to open the tab content */
+      .tab button {
+        background-color: inherit;
+        float: right;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        font-size: 16px;
+        color: #fff;
+      }
+
+      /* Change background color of buttons on hover */
+      .tab button:hover {
+        background-color: #45a049;
+      }
+
+      .update-button {
+        margin-top: 20px;
+        background-color: #4caf50;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .update-button:hover {
+        background-color: #45a049;
+      }
+
+      #status {
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+    <script 
+      src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
+    </script>
+  </head>
+  <body>
+    <div class="tab">
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+      <h1>Update the schedules</h1>
+      <button id="update-button" class="update-button" onclick="updateTheSchedules()" disabled="true" style="background-color: grey; cursor: not-allowed">
+        Update
+      </button>
+    </div>
+
+    <div id="status">
+      <p>Status of update script: <span id="last-status"></span></p>
+      <p>Updated Schedules: <span id="updated-schedules"></span></p>
+    </div>
+
+    <script>
+      function logout() {
+        fetch("/app/logout_user/", {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.ok) {
+              window.location.href = "/app/update_schedules/";
+            } else {
+              // Handle error response.
+            }
+          })
+          .catch((error) => {
+            // Handle fetch error.
+          });
+      }
+
+      function updateTheSchedules() {
+        
+        disableUpdateButton();
+
+        modifyParagraphs("Starting", 0)
+
+        // Start the scraper by sending GET request.
+        fetch("/app/update_the_schedules/", {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.ok) {
+              // Invoke updateScriptProgress() to periodically update the script progress (status and updated schedules number).
+              console.log("starting the script");
+              updateScriptProgress();
+            } else {
+              // Handle error response.
+              console.log("cos sie zjebalo");
+            }
+          })
+          .catch((error) => {
+            // Handle fetch error.
+          });
+      }
+
+      /*Check update script status. Returns tupe [number of updated schedules, script status].
+      Script status can be one of the following:
+      - Running,
+      - Not running,
+      - Finished,
+      - schedule_scraper.py error message.*/ 
+      function getScriptStatus(){
+        fetch("/app/check_scraper_progress/")
+            .then((response) => response.json())
+            .then((data) => {
+              // Access the data returned in the JSON response.
+              const updatedScreenshots = data.updated_screenshots;
+              const lastStatus = data.last_status;
+
+              return [updatedScreenshots, lastStatus];
+
+            })
+            .catch((error) => {
+                // Check that path
+                return [0, "Not running"];            
+            });
+      }
+
+      /*Update last-status and updated-schedules paragraphs with provided parameters.*/ 
+      function modifyParagraphs(lastStatus, updatedSchedules){
+
+        const statusElement = document.getElementById("last-status");
+        const updatedSchedulesElement = document.getElementById("updated-schedules");
+        
+        // Update the status and number of updated schedules in the paragraph elements.
+        statusElement.textContent = lastStatus;
+        updatedSchedulesElement.textContent = updatedSchedules;
+      }
+
+      function disableUpdateButton() {
+
+        const updateButton = document.getElementById("update-button");
+        updateButton.disabled = true;
+        updateButton.style.backgroundColor = "grey";
+        updateButton.style.cursor = "not-allowed";
+      }
+
+      function enableUpdateButton() {
+
+        const updateButton = document.getElementById("update-button");
+        updateButton.disabled = false;
+        updateButton.style.backgroundColor = "#4caf50";
+        updateButton.style.cursor = "pointer";
+      }
+
+      /*Update script progress every 1 second. Stop if script finished (with or without error).*/
+      function updateScriptProgress() {
+        intervalId = setInterval(function () {
+
+            console.log("updateScriptProgress")
+
+            status : getScriptStatus();
+
+            modifyParagraphs(status[0], status[0])
+
+            if(status[1] !== "Running"){
+                clearInterval(intervalId);
+                enableUpdateButton()
+            }
+        }, 1000);
+      }
+
+      // After loading the page, check update script status and modify paragraphs accordingly.
+      $(document).ready(function(){
+        status : getScriptStatus();
+        if(status[1] === "Running"){
+            modifyParagraphs("Running", status[0])
+            // Because script is running, start periodically updating its status. 
+            updateScriptProgress();
+        }
+        else{
+            modifyParagraphs("Not running", 0)
+            enableUpdateButton()
+        }
+     });
+    </script>
+  </body>
+</html>
